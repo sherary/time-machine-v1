@@ -8,10 +8,6 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
 # production
 /build
 
@@ -264,10 +260,6 @@ Temporary Items
 
 # testing
 /coverage
-
-# next.js
-/.next/
-/out/
 
 # production
 /build
