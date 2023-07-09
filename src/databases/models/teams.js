@@ -9,7 +9,12 @@ module.exports = (sequelize, DataTypes) => {
 
     userID: {
       type: DataTypes.INTEGER(10),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'Users',
+        key: 'id'
+      },
+      onDelete: 'cascade'
     },
 
     lists: {

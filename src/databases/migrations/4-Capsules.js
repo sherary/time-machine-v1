@@ -12,7 +12,12 @@ module.exports = {
   
       userID: {
         type: Sequelize.INTEGER(10),
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onDelete: 'cascade'
       },
   
       jointID: {
@@ -22,7 +27,12 @@ module.exports = {
   
       teamID: {
         type: Sequelize.INTEGER(10),
-        allowNull: true
+        allowNull: true,
+        references: {
+          model: 'Teams',
+          key: 'id'
+        },
+        onDelete: 'cascade'
       },
   
       comment_cluster_ID: {
