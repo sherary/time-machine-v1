@@ -1,23 +1,39 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class Friendlists extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      // define association here
+  const Friendlists = sequelize.define('Friendslists', {
+    id: {
+      allowNull: false,
+      autoIncrement: true,
+      primaryKey: true,
+      type: DataTypes.INTEGER(10)
+    },
+
+    userID: {
+      type: DataTypes.INTEGER(10),
+      allowNull: false
+    },
+
+    lists: {
+      type: DataTypes.JSON(),
+      allowNull: false,
+      defaultValue: {}
+    },
+
+    createdAt: {
+      allowNull: false,
+      type: DataTypes.DATE
+    },
+
+    updatedAt: {
+      allowNull: false,
+      type: DataTypes.DATE
     }
-  }
-  Friendlists.init({
-    name: DataTypes.STRING
   }, {
-    sequelize,
-    modelName: 'Friendlists',
-  });
-  return Friendlists;
-};
+      sequelize,
+      modelName: 'Friendslists',
+      tableName: 'Friendslists',
+      freezeTableName: true,
+      timestamp: true,
+  })
+
+  return Friendlists
+}

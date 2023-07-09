@@ -2,20 +2,30 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Friendlists', {
+    await queryInterface.createTable('Friendslists', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER(10)
       },
-      name: {
-        type: Sequelize.STRING
+
+      userID: {
+        type: Sequelize.INTEGER(10),
+        allowNull: false
       },
+
+      lists: {
+        type:Sequelize.JSON(),
+        allowNull: false,
+        defaultValue: {}
+      },
+
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       },
+
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -23,6 +33,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Friendlists');
+    await queryInterface.dropTable('Friendslists');
   }
 };

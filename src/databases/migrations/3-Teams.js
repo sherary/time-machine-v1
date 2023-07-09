@@ -7,15 +7,25 @@ module.exports = {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER(10)
       },
-      name: {
-        type: Sequelize.STRING
+
+      userID: {
+        type: Sequelize.INTEGER(10),
+        allowNull: false
       },
+
+      lists: {
+        type:Sequelize.JSON(),
+        allowNull: false,
+        defaultValue: {}
+      },
+
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       },
+
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
