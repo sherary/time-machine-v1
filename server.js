@@ -1,10 +1,10 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+require("dotenv").config()
 const db = require('./src/databases/models');
 const app = express();
-
-const env = process.env;
-const PORT = env.PORT || 3000;
+const { SERVER_HOST, SERVER_PORT } = process.env;
+const PORT = SERVER_PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -15,13 +15,9 @@ const indexRoute = require('./src/routers/index');
 app.use('/', indexRoute);
 
 db.sequelize.sync().then(() => {
-    console.log(`Database synced!`);
     app.listen(PORT, () => {
-        console.log(`Server running on `)
+        console.log(`Server run on ${SERVER_HOST}:${SERVER_PORT} 🚀`)
     })
-})
-app.listen(PORT, () => {
-    console.log(`Server run on ${env.HOST}:${env.PORT} 🚀`)
 })
 
 module.exports = app;

@@ -1,7 +1,7 @@
 const Index = class {
     index = async (req, res) => {
         return res.status(200).json({
-            message: 'Welcome to the API',
+            message: 'Welcome to Time Capsule API',
             version: "1.0.0",
             data: {
                 ip: req.ip, 
