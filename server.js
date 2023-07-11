@@ -5,10 +5,13 @@ const db = require('./src/databases/models');
 const app = express();
 const { SERVER_HOST, SERVER_PORT } = process.env;
 const PORT = SERVER_PORT || 3000;
+const { ErrorLogger, AccessLogger } = require('./src/middlewares/index');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.unsubscribe(cookieParser());
+app.use(ErrorLogger);
+app.use(AccessLogger);
 
 const indexRoute = require('./src/routers/index');
 
