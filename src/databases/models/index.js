@@ -33,6 +33,7 @@ db.users = require('./users')(sequelize, DataTypes);
 db.friendslists = require('./friendlists')(sequelize, DataTypes);
 db.teams = require('./teams')(sequelize, DataTypes);
 db.capsules = require('./capsules')(sequelize, DataTypes);
+db.device_management = require('./device_management')(sequelize, DataTypes);
 
 db.users.hasMany(db.friendslists, {
     foreignKey: 'userID',
@@ -76,6 +77,17 @@ db.teams.hasMany(db.capsules, {
 db.capsules.belongsTo(db.teams, {
     foreignKey: 'teamID',
     as: 'teams'
+})
+
+db.users.hasMany(db.device_management, {
+    foreignKey: 'userID',
+    as: 'users',
+    onDelete: 'cascade'
+})
+
+db.device_management.belongsTo(db.users, {
+    foreignKey: 'userID',
+    as: 'users'
 })
 
 module.exports = db

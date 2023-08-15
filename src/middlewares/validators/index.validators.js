@@ -42,7 +42,7 @@ const ValidateUpdatePayload = (IDSchema, UpdateSchema) => {
         if (bodyError) {
             err += `${bodyError.message}`
         }
-        console.log(paramsError, bodyError)
+        
         if (!paramsError && !bodyError) {
             req.data = { ...paramsValue, ...bodyValue }
             return next();
@@ -52,4 +52,17 @@ const ValidateUpdatePayload = (IDSchema, UpdateSchema) => {
     }
 }
 
-module.exports = { ValidateCreatePayload, ValidateIDParams, ValidateUpdatePayload }
+const ValidateLoginPayload = (LoginSchema) => {
+    return (req, res, next) => {
+        const { error, value } = LoginSchema.validate(req.body);
+
+        if (!error) {
+            req.user = value
+            return next();
+        }
+
+        return res.status(httpCodes.BAD_REQUEST.CODE).json(Error.BadRequest(error.message.split(/[,\.]/)));
+    }
+}
+
+module.exports = { ValidateCreatePayload, ValidateIDParams, ValidateUpdatePayload, ValidateLoginPayload }

@@ -28,4 +28,10 @@ const UpdateSchema = Joi.object({
     password: password,
 }).options({ abortEarly: false });
 
-module.exports = { CreateSchema, IDSchema, UpdateSchema }
+const LoginSchema = Joi.object({
+    email: email,
+    username: username,
+    password: password.required(),
+}).xor('email', 'username').options({ abortEarly: false });
+
+module.exports = { CreateSchema, IDSchema, UpdateSchema, LoginSchema }
