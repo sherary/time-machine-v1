@@ -1,3 +1,4 @@
+const { getUserByUsername, getUserByEmail } = require("../../helpers/Commons");
 const { httpCodes } = require("../../helpers/Constants");
 const ParsedError = require("../Error");
 const Error = new ParsedError();
@@ -53,15 +54,27 @@ const ValidateUpdatePayload = (IDSchema, UpdateSchema) => {
 }
 
 const ValidateLoginPayload = (LoginSchema) => {
-    return (req, res, next) => {
+    return async (req, res, next) => {
         const { error, value } = LoginSchema.validate(req.body);
 
         if (!error) {
-            req.user = value
-            return next();
+            let data;
+            if (value.username) {
+                data = await getUserByUsername(value.username);
+            } 
+            
+            if (value.email) {
+                data = await getUserByEmail(value.email);
+            }
+            
+            if (data) {
+                return next();
+            }
+            
+            return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("User not found"));
         }
 
-        return res.status(httpCodes.BAD_REQUEST.CODE).json(Error.BadRequest(error.message.split(/[,\.]/)));
+        return res.status(httpCodes.UNAUTHORIZED.CODE).json(Error.Unauthorized(error));
     }
 }
 

@@ -5,12 +5,21 @@ const Error = new ParsedError();
 const Success = new ParsedSuccess();
 const { httpCodes } = require('../../helpers/Constants');
 const userAgent = require('useragent');
+const { encrypt } = require('../../helpers/Commons');
 
 const Users = class {
     Register = async (req, res) => {
         const t = await sequelize.transaction();
         try {
-            const data = await users.create(req.data, { transaction: t });
+            const { username, email, password } = req.data;
+            const encryptedPassword = encrypt(password);
+            
+            const data = await users.create({
+                username: username,
+                email: email,
+                password: encryptedPassword
+            }, 
+                { transaction: t });
             
             if (data) {
                 await t.commit();
@@ -25,8 +34,8 @@ const Users = class {
     Login = async (req, res) => {
         const t = await sequelize.transaction();
         try {
-            const { user_id, location } = req.body;
-            const updateData = { user_id, location };
+            const { id } = req.user;
+            const updateData = {};
             const agent = req.headers['user-agent']
             updateData['agent'] = agent;
             updateData['last_login'] = new Date();
@@ -37,20 +46,20 @@ const Users = class {
             
             const deviceManagement = await device_management.findOne({
                 where: {
-                    userID: user_id
+                    userID: id
                 },
                 raw: true
             });
     
             if (!deviceManagement) {
                 data = await device_management.create({
-                    userID: user_id,
+                    userID: id,
                     ...updateData
                 }, { transaction: t });
             } else {
                 data = await device_management.update(updateData, {
                     where: {
-                        userID: user_id
+                        userID: id
                     },
                     transaction: t
                 });
@@ -68,7 +77,7 @@ const Users = class {
         try {
             const data = await device_management.update({ isLoggedIn: false }, {
                 where: {
-                    userID: req.body.user_id
+                    userID: req.data.userID
                 }
             })
 
@@ -83,7 +92,6 @@ const Users = class {
 
             return res.status(httpCodes.CONFLICT.CODE).json(Error.Conflict("You are already logged out"));
         } catch (err) {
-            console.log(err)
             return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to log out", err));
         }
     }

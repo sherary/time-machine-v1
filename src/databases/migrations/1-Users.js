@@ -12,7 +12,8 @@ module.exports = {
   
       name: {
         type: Sequelize.STRING(50),
-        allowNull: false
+        allowNull: false,
+        defaultValue: ''
       },
 
       dob: {
@@ -27,7 +28,7 @@ module.exports = {
   
       email: {
         type: Sequelize.STRING(40),
-        allowNull: false
+        allowNull: true
       },
   
       password: {
