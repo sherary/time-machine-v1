@@ -1,24 +1,38 @@
-const db = require('../../databases/models/index');
+const { sequelize, users } = require('../../databases/models/index');
 const ParsedSuccess = require('../../middlewares/Success');
 const ParsedError = require('../../middlewares/Error');
 const Error = new ParsedError();
 const Success = new ParsedSuccess();
 const { httpCodes } = require('../../helpers/Constants');
-const { users } = db;
 
 const Users = class {
     Register = async (req, res) => {
-        try { 
-            const data = await users.create(req.body, { raw: true });
+        const t = await sequelize.transaction();
+        try {
+            const data = await users.create(req.data, { transaction: t });
             
-            return res.status(httpCodes.CREATED.CODE).json(Success.Created("Success creating new user", data))
+            if (data) {
+                await t.commit();
+                return res.status(httpCodes.CREATED.CODE).json(Success.Created("Success creating new account",  data));
+            }
         } catch (err) {
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to create new user", err.message));
+            await t.rollback();
+            res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to create new account", err));
         }
     }
 
     Login = async (req, res) => {
+        try {
+            const data = await users.update(req.body, { 
+                where: {
+                    id: req.body.user_id,
+                }
+            })
 
+            return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success updating login status", data));
+        } catch (err) {
+            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to getting all user", err.message));
+        }
     }
 
     Logout = async (req, res) => {
@@ -39,7 +53,7 @@ const Users = class {
         try {
             const data = await users.findOne({
                 where: {
-                    id: req.params.user_id
+                    id: req.data.user_id
                 }
             }, { raw: true });
 
@@ -50,37 +64,48 @@ const Users = class {
     }
 
     UpdateUser = async (req, res) => {
+        const t = await sequelize.transaction();
         try {
-            const data = await users.update(req.body, {
+            const { user_id, name, dob, username, email } = req.data;
+            const updatedData = { user_id, name, dob, username, email };
+            const data = await users.update(updatedData, {
                 where: {
-                    id: req.params.user_id
+                    id: user_id
                 },
+                transaction: t
             });
-
+            
             if (data == 1) {
+                t.commit();
                 return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success updating users", req.body));
             }
 
             return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("No row updated"));
         } catch (err) {
+            t.rollback();
             return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to updating user", err.message));
         }
     }
 
     DeleteUser = async (req, res) => {
+        const t = await sequelize.transaction();
         try {
+            const { user_id } = req.data;
             const data = await users.destroy({
                 where: {
-                    id: req.params.user_id
-                }
+                    id: user_id
+                },
+                transaction: t
             });
 
             if (data == 1) {
+                t.commit();
                 return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success deleting users"));
             }
 
             return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("No row deleted"));
         } catch (err) {
+            t.rollback();
             return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to delete user", err.message));
         }
     }

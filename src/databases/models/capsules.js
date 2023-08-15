@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER(10),
       allowNull: true,
       references: {
-        model: 'Users',
+        model: 'Teams',
         key: 'id'
       },
       onDelete: 'cascade'

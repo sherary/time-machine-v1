@@ -21,9 +21,9 @@ module.exports = {
       },
 
       lists: {
-        type:Sequelize.JSON(),
-        allowNull: false,
-        defaultValue: {}
+        type:Sequelize.TEXT,
+        allowNull: true,
+        defaultValue: JSON.stringify([{}])
       },
 
       createdAt: {

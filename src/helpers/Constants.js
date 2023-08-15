@@ -45,6 +45,35 @@ const httpCodes = {
     }
 }
 
+const PAYLOAD = {
+    MIN_STRING: 4,
+
+    NAME: {
+        MAX: 50,
+    },
+
+    USERNAME: {
+        MAX: 20,
+    },
+
+    DOB: {
+        MAX: 12,
+    },
+
+    EMAIL: {
+        MAX: 40,
+    },
+
+    PASSWORD: {
+        MAX: 100,
+    },
+
+    ID: {
+        MIN: 1,
+        MAX: 9999999999
+    }
+}
+
 module.exports = {
-    httpCodes
+    httpCodes, PAYLOAD,
 }

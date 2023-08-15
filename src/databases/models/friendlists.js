@@ -18,9 +18,9 @@ module.exports = (sequelize, DataTypes) => {
     },
 
     lists: {
-      type: DataTypes.JSON(),
-      allowNull: false,
-      defaultValue: {}
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: JSON.stringify([{}])
     },
 
     createdAt: {

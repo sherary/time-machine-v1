@@ -1,5 +1,5 @@
 const colors = require('colors-cli');
-const green = colors.green_b;
+const green = colors.green;
 const red = colors.red_b;
 
 const ErrorLogger = (err, req, res, next) => {
