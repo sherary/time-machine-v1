@@ -7,9 +7,9 @@ const Auth = require('../../middlewares/authenticate');
 router.post('/register', UserValidator.RegisterPayload, Auth.AuthenticateRegister, UserController.Register);
 router.post('/login', UserValidator.LoginPayload, Auth.AuthenticateLogin, UserController.Login);
 router.patch('/logout/:user_id', UserValidator.IDPayload, Auth.isAuthenticated, UserController.Logout);
-router.get('/', UserController.GetAllUsers);
-router.get('/:user_id', UserValidator.IDPayload, UserController.GetOneUser);
-router.patch('/update/:user_id', UserValidator.UpdatePayload, UserController.UpdateUser);
-router.delete('/delete/:user_id', UserValidator.IDPayload, UserController.DeleteUser);
+router.get('/', Auth.isAuthenticated, UserController.GetAllUsers);
+router.get('/:user_id', UserValidator.IDPayload, Auth.isAuthenticated, UserController.GetOneUser);
+router.patch('/update/:user_id', UserValidator.UpdatePayload, Auth.isAuthenticated, UserController.UpdateUser);
+router.delete('/delete/:user_id', UserValidator.IDPayload, Auth.isAuthenticated, UserController.DeleteUser);
 
 module.exports = router;

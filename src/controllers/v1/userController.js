@@ -5,7 +5,7 @@ const Error = new ParsedError();
 const Success = new ParsedSuccess();
 const { httpCodes } = require('../../helpers/Constants');
 const userAgent = require('useragent');
-const { encrypt } = require('../../helpers/Commons');
+const { encrypt, generateToken } = require('../../helpers/Commons');
 
 const Users = class {
     Register = async (req, res) => {
@@ -48,9 +48,16 @@ const Users = class {
                 where: {
                     userID: id
                 },
-                raw: true
+                include: {
+                    model: users,
+                    as: 'users',
+                    attributes: ['role']
+                },
+                attributes: ['userID', 'agent', 'OS', 'location', 'last_login', 'isLoggedIn'],
+                raw: true,
+                nested: true
             });
-    
+            
             if (!deviceManagement) {
                 data = await device_management.create({
                     userID: id,
@@ -63,9 +70,17 @@ const Users = class {
                     },
                     transaction: t
                 });
+                
             }
-    
+            
             await t.commit();
+
+            delete req.user['password'];
+            delete req.user['createdAt'];
+            delete req.user['updatedAt'];
+            
+            data = generateToken(req.user);
+
             return res.status(httpCodes.CREATED.CODE).json(Success.Created("Success create new device management", data));
         } catch (err) {
             await t.rollback();
@@ -110,11 +125,15 @@ const Users = class {
         try {
             const data = await users.findOne({
                 where: {
-                    id: req.data.user_id
+                    id: req.user.id
                 }
             }, { raw: true });
 
-            return res.status(httpCodes.SUCCESS.CODE).json(Success.OK("Success getting all users", data));
+            if(data) {
+                return res.status(httpCodes.SUCCESS.CODE).json(Success.OK("Success getting all users", data));
+            }
+
+            return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("No user found"));
         } catch (err) {
             return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to getting all user", err.message));
         }
@@ -123,15 +142,16 @@ const Users = class {
     UpdateUser = async (req, res) => {
         const t = await sequelize.transaction();
         try {
-            const { user_id, name, dob, username, email } = req.data;
-            const updatedData = { user_id, name, dob, username, email };
+            const { name, dob, username, email } = req.data;
+            const { id } = req.user;
+            const updatedData = { id, name, dob, username, email };
             const data = await users.update(updatedData, {
                 where: {
-                    id: user_id
+                    id: id
                 },
                 transaction: t
             });
-            
+            console.log(updatedData, req.user)
             if (data == 1) {
                 t.commit();
                 return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success updating users", req.body));

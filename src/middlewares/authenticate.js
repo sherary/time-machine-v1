@@ -1,10 +1,9 @@
-const { device_management } = require('../databases/models');
-const { getUserByColumnAndID } = require('../helpers/Commons');
+const { decodeToken } = require('../helpers/Commons');
 const { httpCodes } = require('../helpers/Constants');
 const ParsedError = require('./Error');
 const passport = require('./authenticate.config');
-const jwt = require('jsonwebtoken');
 const Error = new ParsedError();
+require('dotenv').config();
 
 const AuthenticateLogin = (req, res, next) => {
     passport.authenticate('login', (err, user) => {
@@ -44,13 +43,17 @@ const isAuthenticated = async (req, res, next) => {
         return next();
     }
 
-    const data = await getUserByColumnAndID(device_management, req.data.user_id);
+    const data = await decodeToken(req.headers);
     if (data.isLoggedIn == 0) {
         return res.status(httpCodes.CONFLICT.CODE).json(Error.Conflict("Already Logged out!"));
     }
     
+    if (data.code == 400) {
+        return res.status(httpCodes.BAD_REQUEST.CODE).json(Error.BadRequest(data.message));
+    }
+
     if (data) {
-        req.data = data
+        req.user = data
         return next();
     }
 

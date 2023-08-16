@@ -1,6 +1,7 @@
 const { users } = require('../databases/models/index');
 require('dotenv').config();
-const { KEY, IV } = process.env;
+const jwt = require('jsonwebtoken');
+const { KEY, IV, JWT_SECRET_KEY } = process.env;
 const iv_key = Buffer.from(IV, 'hex');
 const key = Buffer.from(KEY, 'hex');
 const crypto = require('crypto');
@@ -80,4 +81,38 @@ const decrypt = (data) => {
     return decrypted;
 }
 
-module.exports = { getUserByEmail, getUserByID, getUserByUsername, getUserByColumnAndID, encrypt, decrypt }
+const generateToken = (data) => {
+    return jwt.sign(data, JWT_SECRET_KEY);
+}
+
+const decodeToken = (headers) => {
+    try {
+        const authHeader = headers['authorization'];
+        let err = {};
+        
+        if (!authHeader) {
+            err['code'] = 400
+            err['message'] = "No token provided";
+            return err
+        } else {
+            const regex = new RegExp('\\b' + "Bearer" + '\\b\\s*', 'gi');
+            const token = authHeader.replace(regex, '');
+
+            const user = jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
+                if (err) {
+                    err['code'] = 500
+                    err['message'] = "Token internal error";
+                    return err
+                }
+                
+                return user;
+            })
+        
+            return user
+        }
+    } catch (err) {
+        return err
+    }
+}
+
+module.exports = { getUserByEmail, getUserByID, getUserByUsername, getUserByColumnAndID, encrypt, decrypt, generateToken, decodeToken }
