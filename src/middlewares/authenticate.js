@@ -49,7 +49,11 @@ const isAuthenticated = async (req, res, next) => {
     }
     
     if (data.code == 400) {
-        return res.status(httpCodes.BAD_REQUEST.CODE).json(Error.BadRequest(data.message));
+        return res.status(data.code).json(Error.BadRequest(data.message));
+    }
+
+    if (data.code === 500) {
+        return res.status(data.code).json(Error.BadRequest(data.message));
     }
 
     if (data) {

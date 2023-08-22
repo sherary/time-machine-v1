@@ -86,23 +86,28 @@ const generateToken = (data) => {
 }
 
 const decodeToken = (headers) => {
+    let error = {};
     try {
         const authHeader = headers['authorization'];
-        let err = {};
-        
         if (!authHeader) {
-            err['code'] = 400
-            err['message'] = "No token provided";
-            return err
+            error['code'] = 400
+            error['message'] = "No token provided";
+            return error
         } else {
             const regex = new RegExp('\\b' + "Bearer" + '\\b\\s*', 'gi');
             const token = authHeader.replace(regex, '');
+            
+            if (token.length < 216) {
+                error['code'] = 400;
+                error['message'] = "Please provide a correct token";
+                return error
+            }
 
             const user = jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
                 if (err) {
-                    err['code'] = 500
-                    err['message'] = "Token internal error";
-                    return err
+                    error['code'] = 500
+                    error['message'] = "Token internal error";
+                    return error
                 }
                 
                 return user;
@@ -111,8 +116,19 @@ const decodeToken = (headers) => {
             return user
         }
     } catch (err) {
-        return err
+        error['code'] = 500
+        error['message'] = err
+        return error
     }
 }
 
-module.exports = { getUserByEmail, getUserByID, getUserByUsername, getUserByColumnAndID, encrypt, decrypt, generateToken, decodeToken }
+const responseHandler = (code, message, data) => {
+    const response = {};
+    response['code'] = code;
+    response['message'] = message;
+    response['data'] = data
+
+    return response;
+}
+
+module.exports = { getUserByEmail, getUserByID, getUserByUsername, getUserByColumnAndID, encrypt, decrypt, generateToken, decodeToken, responseHandler }

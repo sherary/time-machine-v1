@@ -6,7 +6,7 @@ const Auth = require('../../middlewares/authenticate');
 
 router.post('/register', UserValidator.RegisterPayload, Auth.AuthenticateRegister, UserController.Register);
 router.post('/login', UserValidator.LoginPayload, Auth.AuthenticateLogin, UserController.Login);
-router.patch('/logout/:user_id', UserValidator.IDPayload, Auth.isAuthenticated, UserController.Logout);
+router.patch('/logout', Auth.isAuthenticated, UserController.Logout);
 router.get('/', Auth.isAuthenticated, UserController.GetAllUsers);
 router.get('/:user_id', UserValidator.IDPayload, Auth.isAuthenticated, UserController.GetOneUser);
 router.patch('/update/:user_id', UserValidator.UpdatePayload, Auth.isAuthenticated, UserController.UpdateUser);

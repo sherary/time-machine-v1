@@ -1,15 +1,13 @@
 const { sequelize, users, device_management } = require('../../databases/models/index');
-const ParsedSuccess = require('../../middlewares/Success');
-const ParsedError = require('../../middlewares/Error');
-const Error = new ParsedError();
-const Success = new ParsedSuccess();
 const { httpCodes } = require('../../helpers/Constants');
 const userAgent = require('useragent');
-const { encrypt, generateToken } = require('../../helpers/Commons');
+const { encrypt, generateToken, responseHandler } = require('../../helpers/Commons');
 
 const Users = class {
-    Register = async (req, res) => {
+    Register = async (req, _, next) => {
         const t = await sequelize.transaction();
+        let response = {};
+
         try {
             const { username, email, password } = req.data;
             const encryptedPassword = encrypt(password);
@@ -23,16 +21,21 @@ const Users = class {
             
             if (data) {
                 await t.commit();
-                return res.status(httpCodes.CREATED.CODE).json(Success.Created("Success creating new account",  data));
+                response = responseHandler(httpCodes.CREATED.CODE, "Success creating new account", data);
+                req.response = response;
+                return next();
             }
-        } catch (err) {
+        } catch (err) {console.log(err)
             await t.rollback();
-            res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to create new account", err));
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to create new account", err);
+            req.response = response;
+            return next();
         }
     }
 
-    Login = async (req, res) => {
+    Login = async (req, _, next) => {
         const t = await sequelize.transaction();
+        let response = {};
         try {
             const { id } = req.user;
             const updateData = {};
@@ -80,19 +83,23 @@ const Users = class {
             delete req.user['updatedAt'];
             
             data = generateToken(req.user);
-
-            return res.status(httpCodes.CREATED.CODE).json(Success.Created("Success create new device management", data));
+            response = responseHandler(httpCodes.CREATED.CODE, "Success creating new device management", data);
+            req.response = response;
+            next();
         } catch (err) {
             await t.rollback();
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to create new device management", err.message));
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to create new device management", err);
+            req.response = response;
+            return next();
         }
     }    
 
-    Logout = async (req, res) => {
+    Logout = async (req, _, next) => {console.log("User", req.user)
+        let response = {};
         try {
             const data = await device_management.update({ isLoggedIn: false }, {
                 where: {
-                    userID: req.data.userID
+                    userID: req.user.id
                 }
             })
 
@@ -100,47 +107,80 @@ const Users = class {
                 return req.logout((err) => {
                     if (!err) {
                         req.session.destroy()
-                        return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success logging out"));
+                        response = responseHandler(httpCodes.ACCEPTED.CODE, "Success logging out");
+                        req.response = response;
+                        
+                        return next();
                     }
                 })
             }
 
-            return res.status(httpCodes.CONFLICT.CODE).json(Error.Conflict("You are already logged out"));
-        } catch (err) {
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to log out", err));
+            response = responseHandler(httpCodes.CONFLICT.CODE, "You are already logged out");
+            req.response = response;
+
+            return next();
+        } catch (err) {console.log(err)
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to log out", err)
+            req.response = response;
+
+            return next();
         }
     }
 
-    GetAllUsers = async (req, res) => {
+    GetAllUsers = async (req, _, next) => {
+        let response = {};
         try {
             const data = await users.findAll({ raw: true });
 
-            return res.status(httpCodes.SUCCESS.CODE).json(Success.OK("Success getting all users", data));
+            data.map(items => {
+                delete items['password']
+                
+                return items
+            })
+
+            response = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all users", data);
+            req.response = response;
+
+            return next();
         } catch (err) {
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to getting all user", err.message));
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed getting all user", err);
+            req.response = response;
+            
+            return next();
         }
     }
 
-    GetOneUser = async (req, res) => {
+    GetOneUser = async (req, _, next) => {
+        let response = {};
         try {
             const data = await users.findOne({
                 where: {
-                    id: req.user.id
+                    id: req.data.user_id
                 }
             }, { raw: true });
 
             if(data) {
-                return res.status(httpCodes.SUCCESS.CODE).json(Success.OK("Success getting all users", data));
+                response = responseHandler(httpCodes.SUCCESS.CODE, "Success getting user", data);
+                req.response = response;
+
+                return next();
             }
 
-            return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("No user found"));
+            response = responseHandler(httpCodes.NOTFOUND.CODE, "No user found");
+            req.response = response;
+            
+            return next();
         } catch (err) {
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to getting all user", err.message));
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to getting all user", err);
+            req.response = response;
+
+            return next();
         }
     }
 
-    UpdateUser = async (req, res) => {
+    UpdateUser = async (req, _, next) => {
         const t = await sequelize.transaction();
+        let response = {};
         try {
             const { name, dob, username, email } = req.data;
             const { id } = req.user;
@@ -151,21 +191,31 @@ const Users = class {
                 },
                 transaction: t
             });
-            console.log(updatedData, req.user)
+            
             if (data == 1) {
-                t.commit();
-                return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success updating users", req.body));
+                await t.commit();
+                response = responseHandler(httpCodes.ACCEPTED.CODE, 'Successfully Updated', req.data);
+                req.response = response;
+
+                return next();
             }
 
-            return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("No row updated"));
+            response = responseHandler(httpCodes.NOTFOUND.CODE, "No row updated", req.data);
+            req.response = response;
+
+            return next();
         } catch (err) {
-            t.rollback();
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to updating user", err.message));
+            await t.rollback();
+            response = responseHandler(httpCodes.NOTFOUND.CODE, "Failed to updating user", err)
+            req.response = response;
+
+            return next();
         }
     }
 
-    DeleteUser = async (req, res) => {
+    DeleteUser = async (req, _, next) => {
         const t = await sequelize.transaction();
+        let response = {};
         try {
             const { user_id } = req.data;
             const data = await users.destroy({
@@ -176,14 +226,23 @@ const Users = class {
             });
 
             if (data == 1) {
-                t.commit();
-                return res.status(httpCodes.ACCEPTED.CODE).json(Success.Accepted("Success deleting users"));
+                await t.commit();
+                response = responseHandler(httpCodes.ACCEPTED.CODE, "Success deleting users")
+                req.response = response;
+
+                return next();
             }
 
-            return res.status(httpCodes.NOTFOUND.CODE).json(Error.NotFound("No row deleted"));
+            response = responseHandler(httpCodes.NOTFOUND.CODE, "No row deleted")
+            req.response = response;
+
+            return next();
         } catch (err) {
-            t.rollback();
-            return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("Failed to delete user", err.message));
+            await t.rollback();
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE,"Failed to delete user", err);
+            req.response = response;
+
+            return next();
         }
     }
 }
