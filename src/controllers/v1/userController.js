@@ -1,4 +1,4 @@
-const { sequelize, users, device_management } = require('../../databases/models/index');
+const { sequelize, users, device_management, friendslists } = require('../../databases/models/index');
 const { httpCodes } = require('../../helpers/Constants');
 const userAgent = require('useragent');
 const { encrypt, generateToken, responseHandler } = require('../../helpers/Commons');
@@ -20,8 +20,12 @@ const Users = class {
                 { transaction: t });
             
             if (data) {
+                const cluster = await friendslists.create({
+                    userID: data.id,
+                }, { transaction: t });
+                
                 await t.commit();
-                response = responseHandler(httpCodes.CREATED.CODE, "Success creating new account", data);
+                response = responseHandler(httpCodes.CREATED.CODE, "Success creating new account", [data, cluster]);
                 req.response = response;
                 return next();
             }
@@ -239,7 +243,7 @@ const Users = class {
             return next();
         } catch (err) {
             await t.rollback();
-            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE,"Failed to delete user", err);
+            response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to delete user", err);
             req.response = response;
 
             return next();

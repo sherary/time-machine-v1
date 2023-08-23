@@ -43,7 +43,7 @@ const isAuthenticated = async (req, res, next) => {
         return next();
     }
 
-    const data = await decodeToken(req.headers);
+    const data = decodeToken(req.headers);
     if (data.isLoggedIn == 0) {
         return res.status(httpCodes.CONFLICT.CODE).json(Error.Conflict("Already Logged out!"));
     }
