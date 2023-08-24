@@ -14,12 +14,23 @@ const Friends = class {
                 userID: +id,
                 friendID: +friendID
             }
-            const data = await friends.create(friendRequest, {
-                transaction: t
-            });
+            const isAvailable = await friends.findAll({
+                where: friendRequest,
+                transaction: t,
+                raw: true
+            })
             
-            t.commit();
-            result = responseHandler(httpCodes.CREATED.CODE, "Success creating new friendlist", data);
+            if (isAvailable.length > 0) {
+                t.rollback();
+                result = responseHandler(httpCodes.CONFLICT.CODE, "Already connected");
+            } else {
+                const data = await friends.create(friendRequest, {
+                    transaction: t
+                });
+                
+                t.commit();
+                result = responseHandler(httpCodes.CREATED.CODE, "Success creating new friendlist", data);
+            }
         } catch (err) {
             t.rollback();
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to create friend lists", err.message);
