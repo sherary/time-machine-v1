@@ -1,5 +1,5 @@
 const UserSchemas = require('./schemas/Users');
-const Validator = require('./index.validators');
+const Validator = require('./index.validator');
 
 const RegisterPayload = Validator.ValidateCreatePayload(UserSchemas.CreateSchema);
 const IDPayload = Validator.ValidateIDParams(UserSchemas.IDSchema);

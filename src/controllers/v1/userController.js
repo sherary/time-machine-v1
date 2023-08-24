@@ -20,12 +20,8 @@ const Users = class {
                 { transaction: t });
             
             if (data) {
-                const cluster = await friendslists.create({
-                    userID: data.id,
-                }, { transaction: t });
-                
                 await t.commit();
-                response = responseHandler(httpCodes.CREATED.CODE, "Success creating new account", [data, cluster]);
+                response = responseHandler(httpCodes.CREATED.CODE, "Success creating new account", data);
                 req.response = response;
                 return next();
             }

@@ -1,20 +1,23 @@
+const { response } = require("../../../server");
 const { sequelize, friends } = require("../../databases/models");
 const { responseHandler } = require("../../helpers/Commons");
 const { httpCodes } = require("../../helpers/Constants");
 
 const Friends = class {
-    SendFriendRequest = async (req, res, next) => {
+    SendFriendRequest = async (req, _, next) => {
         const t = await sequelize.transaction();
         let result = {};
 
         try {
-            const { userID } = req.body;
-            const { friendID } = req.query;
+            const { id } = req.user;
+            const { friendID } = req.data;
             const friendRequest = {
-                userID: userID,
+                userID: +id,
                 friendID: +friendID
             }
-            const data = await friends.create(friendRequest);
+            const data = await friends.create(friendRequest, {
+                transaction: t
+            });
             
             t.commit();
             result = responseHandler(httpCodes.CREATED.CODE, "Success creating new friendlist", data);
@@ -27,16 +30,16 @@ const Friends = class {
         return next();
     }
 
-    AcceptFriendRequest = async (req, res, next) => {
+    AcceptFriendRequest = async (req, _, next) => {
         let result = {};
         const t = await sequelize.transaction();
         try {
-            const { userID } = req.body;
-            const { friendID, accept } = req.query;
+            const { id } = req.user;
+            const { friendID, accept } = req.data;
             
             const data = await friends.findOne({
                 where: {
-                    userID: userID,
+                    userID: +id,
                     friendID: +friendID
                 },
                 transaction: t
@@ -47,19 +50,14 @@ const Friends = class {
                     status: +accept === 1 ? 'Accepted' : 'Pending'
                 }, {
                     where: {
-                        userID: userID,
+                        userID: id,
                         friendID: +friendID
                     },
                     transaction: t
                 })
 
-                if (updateData == 0) {
-                    t.rollback();
-                    result = responseHandler(httpCodes.CONFLICT.CODE, "You are already connected");
-                } else {
-                    t.commit();
-                    result = responseHandler(httpCodes.ACCEPTED.CODE, "Accepting friend request");
-                }
+                t.commit();
+                result = responseHandler(httpCodes.ACCEPTED.CODE, "Accepting friend request", updateData);
             } else {
                 t.rollback();
                 result = responseHandler(httpCodes.NOTFOUND.CODE, "No friend request found");
@@ -73,19 +71,23 @@ const Friends = class {
         return next();
     }
 
-    GetAllFriendRequests = async (req, res, next) => {
+    GetAllFriendRequests = async (req, _, next) => {
         let result = {};
         try {
-            const { userID } = req.body;
+            const { id } = req.user;
             const data = await friends.findAll({
                 where: {
-                    userID: userID,
+                    userID: +id,
                     status: 'Pending'
                 },
                 raw: true
             })
-
-            result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all friend requests", data);
+            
+            if (data.length == 0) {
+                result = responseHandler(httpCodes.SUCCESS.CODE, "You have no friend request", data);
+            } else {
+                result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all friend requests", data);
+            }
         } catch (err) {
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to get all friend requests", err.message);
         }
@@ -94,39 +96,20 @@ const Friends = class {
         return next();
     }
 
-    GetAllFriends = async (req, res, next) => {
+    GetAllFriends = async (req, _, next) => {
         let result = {};
         try {
-            const { userID } = req.body;
+            const { id } = req.user;
             const data = await friends.findAll({
                 where: {
-                    userID: userID,
+                    userID: +id,
                     status: 'Accepted'
                 }
             });
             
             result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all friendlist", data);
-        } catch (err) {
+        } catch (err) {console.log(err)
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to get all friendlists", err);
-        }
-
-        req.response = result;
-        return next();
-    }
-
-    GetOne = async (req, res, next) => {
-        let result = {};
-
-        try {
-            const data = await friends.findAll({
-                where: {
-                    userID: req.params.userID
-                }
-            });
-            
-            result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting friends list", data);
-        } catch (err) {
-            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to get friends list", err);
         }
 
         req.response = result;
@@ -140,12 +123,12 @@ const Friends = class {
         try {
             const data = await friends.destroy({
                 where: {
-                    friendID: req.query.friendID
+                    friendID: req.data.friendID
                 },
                 transaction: t
-            })
+            });
             
-            if (data) {
+            if (data == 1) {
                 t.commit();
                 result = responseHandler(httpCodes.ACCEPTED.CODE, "Success deleting friend list");
             } else {

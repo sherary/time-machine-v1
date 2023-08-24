@@ -18,8 +18,17 @@ const ValidateCreatePayload = (CreateSchema) => {
 
 const ValidateIDParams = (IDSchema) => {
     return (req, res, next) => {
-        const { error, value } = IDSchema.validate(req.params);
+        let obj = {};
+        if (req.params) {
+            obj = req.params;
+        }
 
+        if (req.query) {
+            obj = req.query;
+        }
+        
+        const { error, value } = IDSchema.validate(obj);
+        
         if(!error) {
             req.data = value;
             return next();
@@ -78,4 +87,30 @@ const ValidateLoginPayload = (LoginSchema) => {
     }
 }
 
-module.exports = { ValidateCreatePayload, ValidateIDParams, ValidateUpdatePayload, ValidateLoginPayload }
+const ValidateFriendRequest = (FriendIDSchema) => {
+    return async (req, res, next) => {
+        const { error, value } = FriendIDSchema.validate(req.query);
+        
+        if (!error) {
+            req.data = value;
+            return next();
+        }
+
+        return res.status(httpCodes.UNAUTHORIZED.CODE).json(Error.Unauthorized(error.message.split(/[,\.]/)));
+    }
+}
+
+const ValidateFriendConfirmation = (AcceptSchema) => {
+    return async (req, res, next) => {
+        const { error, value } = AcceptSchema.validate(req.query);
+
+        if (!error) {
+            req.data = value;
+            return next();
+        }
+
+        return res.status(httpCodes.UNAUTHORIZED.CODE).json(Error.Unauthorized(error.message.split(/[,\.]/)));
+    }
+}
+
+module.exports = { ValidateCreatePayload, ValidateIDParams, ValidateUpdatePayload, ValidateLoginPayload, ValidateFriendRequest, ValidateFriendConfirmation }

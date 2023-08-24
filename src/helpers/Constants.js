@@ -48,6 +48,11 @@ const httpCodes = {
 const PAYLOAD = {
     MIN_STRING: 4,
 
+    BOOLEAN: {
+        MIN: 0,
+        MAX: 1,
+    },
+
     NAME: {
         MAX: 50,
     },

@@ -97,7 +97,7 @@ const decodeToken = (headers) => {
             const regex = new RegExp('\\b' + "Bearer" + '\\b\\s*', 'gi');
             const token = authHeader.replace(regex, '');
             
-            if (token.length < 216) {
+            if (token.length < 210) {
                 error['code'] = 400;
                 error['message'] = "Please provide a correct token";
                 return error
