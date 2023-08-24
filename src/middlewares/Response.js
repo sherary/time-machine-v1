@@ -27,7 +27,7 @@ const SendResponse = () => {
             const response = ResponseMap(code, message, data);
             
             if (!response) {
-                throw new Error('Invalid Code');
+                console.log("Respnse error: ", response)
             }
 
             return res.json(response);

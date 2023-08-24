@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Friendslists', {
+    await queryInterface.createTable('Friends', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -20,10 +20,26 @@ module.exports = {
         onDelete: 'cascade'
       },
 
-      lists: {
-        type:Sequelize.TEXT,
+      friendID: {
+        type: Sequelize.INTEGER(10),
         allowNull: true,
-        defaultValue: JSON.stringify([{}])
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onDelete: 'cascade'
+      },
+
+      status: {
+        allowNull: false,
+        type: Sequelize.ENUM('Pending', 'Accepted'),
+        defaultValue: 'Pending'
+      },
+
+      capsule_total: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
       },
 
       createdAt: {
@@ -38,6 +54,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Friendslists');
+    await queryInterface.dropTable('Friends');
   }
 };

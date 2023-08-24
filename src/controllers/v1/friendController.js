@@ -1,14 +1,20 @@
-const { sequelize, friendslists } = require("../../databases/models");
+const { sequelize, friends } = require("../../databases/models");
 const { responseHandler } = require("../../helpers/Commons");
 const { httpCodes } = require("../../helpers/Constants");
 
 const Friends = class {
-    Create = async (req, res, next) => {
+    SendFriendRequest = async (req, res, next) => {
         const t = await sequelize.transaction();
         let result = {};
 
         try {
-            const data = await friendslists.create(req.body);
+            const { userID } = req.body;
+            const { friendID } = req.query;
+            const friendRequest = {
+                userID: userID,
+                friendID: +friendID
+            }
+            const data = await friends.create(friendRequest);
             
             t.commit();
             result = responseHandler(httpCodes.CREATED.CODE, "Success creating new friendlist", data);
@@ -21,10 +27,83 @@ const Friends = class {
         return next();
     }
 
-    GetAll = async (req, res, next) => {
+    AcceptFriendRequest = async (req, res, next) => {
+        let result = {};
+        const t = await sequelize.transaction();
+        try {
+            const { userID } = req.body;
+            const { friendID, accept } = req.query;
+            
+            const data = await friends.findOne({
+                where: {
+                    userID: userID,
+                    friendID: +friendID
+                },
+                transaction: t
+            })
+            
+            if (data) {
+                const updateData = await friends.update({
+                    status: +accept === 1 ? 'Accepted' : 'Pending'
+                }, {
+                    where: {
+                        userID: userID,
+                        friendID: +friendID
+                    },
+                    transaction: t
+                })
+
+                if (updateData == 0) {
+                    t.rollback();
+                    result = responseHandler(httpCodes.CONFLICT.CODE, "You are already connected");
+                } else {
+                    t.commit();
+                    result = responseHandler(httpCodes.ACCEPTED.CODE, "Accepting friend request");
+                }
+            } else {
+                t.rollback();
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "No friend request found");
+            }
+        } catch (err) {
+            t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to update friend request status", err);
+        }
+
+        req.response = result;
+        return next();
+    }
+
+    GetAllFriendRequests = async (req, res, next) => {
         let result = {};
         try {
-            const data = await friendslists.findAll();
+            const { userID } = req.body;
+            const data = await friends.findAll({
+                where: {
+                    userID: userID,
+                    status: 'Pending'
+                },
+                raw: true
+            })
+
+            result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all friend requests", data);
+        } catch (err) {
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to get all friend requests", err.message);
+        }
+
+        req.response = result;
+        return next();
+    }
+
+    GetAllFriends = async (req, res, next) => {
+        let result = {};
+        try {
+            const { userID } = req.body;
+            const data = await friends.findAll({
+                where: {
+                    userID: userID,
+                    status: 'Accepted'
+                }
+            });
             
             result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all friendlist", data);
         } catch (err) {
@@ -39,7 +118,7 @@ const Friends = class {
         let result = {};
 
         try {
-            const data = await friendslists.findAll({
+            const data = await friends.findAll({
                 where: {
                     userID: req.params.userID
                 }
@@ -54,43 +133,24 @@ const Friends = class {
         return next();
     }
 
-    Update = async (req, res, next) => {
-        const t = await sequelize.transaction();
-        let result = {};
-
-        try {
-            const data = await friendslists.update(req.body, {
-                where: {
-                    userID: req.params.userID
-                },
-                transaction: t
-            });
-            
-            t.commit();
-            result = responseHandler(httpCodes.ACCEPTED.CODE, "Success updating friends list", data);
-        } catch (err) {
-            t.rollback();
-            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to update friends list", err);
-        }
-
-        req.response = result;
-        return next();
-    }
-
     Delete = async (req, res, next) => {
         const t = await sequelize.transaction();
         let result = {};
 
         try {
-            const data = await friendslists.destroy({
+            const data = await friends.destroy({
                 where: {
-                    userID: req.params.userID
+                    friendID: req.query.friendID
                 },
                 transaction: t
             })
             
-            t.commit();
-            result = responseHandler(httpCodes.ACCEPTED.CODE, "Success deleting friend list", data);
+            if (data) {
+                t.commit();
+                result = responseHandler(httpCodes.ACCEPTED.CODE, "Success deleting friend list");
+            } else {
+                result = responseHandler(httpCodes.CONFLICT.CODE, "No connection with this user");
+            }
         } catch (err) {
             t.rollback();
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to delete friend lists", err);

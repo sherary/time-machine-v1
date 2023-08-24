@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const Friendlists = sequelize.define('Friendslists', {
+  const Friendlists = sequelize.define('Friends', {
     id: {
       allowNull: false,
       autoIncrement: true,
@@ -17,10 +17,26 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'cascade'
     },
 
-    lists: {
-      type: DataTypes.TEXT,
+    friendID: {
+      type: DataTypes.INTEGER(10),
       allowNull: true,
-      defaultValue: JSON.stringify([{}])
+      references: {
+        model: 'Users',
+        key: 'id'
+      },
+      onDelete: 'cascade',
+    },
+
+    status: {
+      allowNull: false,
+      type: DataTypes.ENUM('Pending', 'Accepted'),
+      defaultValue: 'Pending'
+    },
+
+    capsule_total: {
+      allowNull: false,
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
     },
 
     createdAt: {
@@ -34,8 +50,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
       sequelize,
-      modelName: 'Friendslists',
-      tableName: 'Friendslists',
+      modelName: 'Friends',
+      tableName: 'Friends',
       freezeTableName: true,
       timestamp: true,
   })

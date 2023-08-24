@@ -30,20 +30,31 @@ db.Sequelize = Sequelize
 db.sequelize = sequelize
 
 db.users = require('./users')(sequelize, DataTypes);
-db.friendslists = require('./friendlists')(sequelize, DataTypes);
+db.friends = require('./friendlists')(sequelize, DataTypes);
 db.teams = require('./teams')(sequelize, DataTypes);
 db.capsules = require('./capsules')(sequelize, DataTypes);
 db.device_management = require('./device_management')(sequelize, DataTypes);
 
-db.users.hasMany(db.friendslists, {
+db.users.hasMany(db.friends, {
     foreignKey: 'userID',
-    as: 'friendslists',
+    as: 'user',
     onDelete: 'cascade'
 })
 
-db.friendslists.belongsTo(db.users, {
+db.users.hasMany(db.friends, {
+    foreignKey: 'friendID',
+    as: 'friend',
+    onDelete: 'cascade'
+})
+
+db.friends.belongsTo(db.users, {
     foreignKey: 'userID',
-    as: 'users'
+    as: 'user'
+})
+
+db.friends.belongsTo(db.users, {
+    foreignKey: 'friendID',
+    as: 'friend'
 })
 
 db.users.hasMany(db.teams, {
