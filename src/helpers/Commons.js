@@ -131,4 +131,17 @@ const responseHandler = (code, message, data) => {
     return response;
 }
 
-module.exports = { getUserByEmail, getUserByID, getUserByUsername, getUserByColumnAndID, encrypt, decrypt, generateToken, decodeToken, responseHandler }
+const getAvailableColumn = (model, row) => {
+    try {
+        const data = model.findAll({
+            raw: true,
+            attributes: row 
+        });
+
+        return data
+    } catch (err) {
+        return err
+    }
+}
+
+module.exports = { getUserByEmail, getUserByID, getUserByUsername, getUserByColumnAndID, encrypt, decrypt, generateToken, decodeToken, responseHandler, getAvailableColumn }

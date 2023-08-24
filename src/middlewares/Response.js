@@ -26,11 +26,9 @@ const SendResponse = () => {
             const { code, message, data } = req.response;
             const response = ResponseMap(code, message, data);
             
-            if (!response) {
-                console.log("Respnse error: ", response)
+            if (response) {
+                return res.json(response);
             }
-
-            return res.json(response);
         } catch (err) {
             return res.status(httpCodes.INTERNAL_ERROR.CODE).json(Error.InternalError("No listed error found: ", err.message));
         }

@@ -64,4 +64,26 @@ const isAuthenticated = async (req, res, next) => {
     return res.status(httpCodes.BAD_REQUEST.CODE).json(Error.BadRequest("Must login first!"));
 }
 
-module.exports = { AuthenticateLogin, AuthenticateRegister, isAuthenticated }
+const isAdmin = async (req, res, next) => {
+    const data = decodeToken(req.headers);
+    if (data.isLoggedIn == 0) {
+        return res.status(httpCodes.CONFLICT.CODE).json(Error.Conflict("Already Logged out!"));
+    }
+
+    if (data.code == 400) {
+        return res.status(data.code).json(Error.BadRequest(data.message));
+    }
+
+    if (data.code === 500) {
+        return res.status(data.code).json(Error.BadRequest(data.message));
+    }
+
+    if (data.role == 1) {
+        return res.status(httpCodes.FORBIDDEN.CODE).json(Error.Forbidden("You shall not pass"));
+    }
+
+    req.data = data;
+    return next();
+}
+
+module.exports = { AuthenticateLogin, AuthenticateRegister, isAuthenticated, isAdmin }

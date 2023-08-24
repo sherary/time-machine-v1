@@ -18,16 +18,8 @@ const ValidateCreatePayload = (CreateSchema) => {
 
 const ValidateIDParams = (IDSchema) => {
     return (req, res, next) => {
-        let obj = {};
-        if (req.params) {
-            obj = req.params;
-        }
-
-        if (req.query) {
-            obj = req.query;
-        }
-        
-        const { error, value } = IDSchema.validate(obj);
+        let params = {...req.params, ...req.query};
+        const { error, value } = IDSchema.validate(params);
         
         if(!error) {
             req.data = value;

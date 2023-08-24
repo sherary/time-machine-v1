@@ -25,7 +25,7 @@ const Users = class {
                 req.response = response;
                 return next();
             }
-        } catch (err) {console.log(err)
+        } catch (err) {
             await t.rollback();
             response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to create new account", err);
             req.response = response;
@@ -94,7 +94,7 @@ const Users = class {
         }
     }    
 
-    Logout = async (req, _, next) => {console.log("User", req.user)
+    Logout = async (req, _, next) => {
         let response = {};
         try {
             const data = await device_management.update({ isLoggedIn: false }, {
@@ -119,7 +119,7 @@ const Users = class {
             req.response = response;
 
             return next();
-        } catch (err) {console.log(err)
+        } catch (err) {
             response = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to log out", err)
             req.response = response;
 

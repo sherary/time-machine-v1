@@ -6,11 +6,15 @@ const accept = Joi.number().integer().min(PAYLOAD.BOOLEAN.MIN).max(PAYLOAD.BOOLE
 
 const FriendIDSchema = Joi.object({
     friendID: friendID.required(),
-})
+});
+
+const ClusterIDSchema = Joi.object({
+    clusterID: friendID.required()
+});
 
 const AcceptSchema = Joi.object({
     friendID: friendID.required(),
     accept: accept.required(),
 }).options({ abortEarly: false });
 
-module.exports = { FriendIDSchema, AcceptSchema };
+module.exports = { FriendIDSchema, AcceptSchema, ClusterIDSchema };

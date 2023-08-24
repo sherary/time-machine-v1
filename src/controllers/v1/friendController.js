@@ -1,5 +1,4 @@
-const { response } = require("../../../server");
-const { sequelize, friends } = require("../../databases/models");
+const { sequelize, friends, Sequelize } = require("../../databases/models");
 const { responseHandler } = require("../../helpers/Commons");
 const { httpCodes } = require("../../helpers/Constants");
 
@@ -108,7 +107,7 @@ const Friends = class {
             });
             
             result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all friendlist", data);
-        } catch (err) {console.log(err)
+        } catch (err) {
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to get all friendlists", err);
         }
 
@@ -128,7 +127,7 @@ const Friends = class {
                 transaction: t
             });
             
-            if (data == 1) {
+            if (data) {
                 t.commit();
                 result = responseHandler(httpCodes.ACCEPTED.CODE, "Success deleting friend list");
             } else {
@@ -137,6 +136,59 @@ const Friends = class {
         } catch (err) {
             t.rollback();
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to delete friend lists", err);
+        }
+
+        req.response = result;
+        return next();
+    }
+
+    DeleteByClusterID = async (req, _, next) => {
+        const t = await sequelize.transaction();
+        let result = {};
+
+        try {
+            const data = await friends.destroy({
+                where: {
+                    friendID: req.data.clusterID
+                },
+                transaction: t
+            });
+            
+            t.commit();
+            result = responseHandler(httpCodes.ACCEPTED.CODE, "Success deleting friend", data);
+        } catch (err) {
+            t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to delete friend", err);
+        }
+
+        req.response = result;
+        return next();
+    }
+
+    BulkDelete = async (req, _, next) => {
+        const t = await sequelize.transaction();
+        let result = {};
+        
+        try {
+            const duplicates = await friends.findAll({
+                attributes: ['userID', 'friendID'],
+                group: ['userID', 'friendID'],
+                having: Sequelize.literal('COUNT(*) > 1'),
+                raw: true,
+                transaction: t
+            })
+
+            duplicates.map(async items => {
+                await friends.destroy({
+                    where: items
+                })
+            })
+
+            t.commit();
+            result = responseHandler(httpCodes.ACCEPTED.CODE, "Bulk Delete in progress");
+        } catch (err) {
+            t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to bulk delete");
         }
 
         req.response = result;
