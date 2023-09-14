@@ -4,7 +4,6 @@ const FriendController = require('../../controllers/v1/friendController');
 const FriendValidator = require('../../middlewares/validators/friends.validator');
 const Auth = require('../../middlewares/authenticate');
 
-router.get('/requests', Auth.isAuthenticated, FriendController.GetAllFriendRequests);
 router.post('/request/send', Auth.isAuthenticated, FriendValidator.SendRequestPayload, FriendValidator.CheckIDMatch(), FriendController.SendFriendRequest);
 router.patch('/request', Auth.isAuthenticated, FriendValidator.ConfirmConnectionPayload, FriendController.AcceptFriendRequest);
 router.get('/', Auth.isAuthenticated, FriendController.GetAllFriends);

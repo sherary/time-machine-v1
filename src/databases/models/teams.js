@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER(10)
     },
 
-    userID: {
+    creatorID: {
       type: DataTypes.INTEGER(10),
       allowNull: false,
       references: {
@@ -17,27 +17,21 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'cascade'
     },
 
-    lists: {
-      type: DataTypes.JSON(),
+    name: {
+      type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: {}
     },
 
-    createdAt: {
-      allowNull: false,
-      type: DataTypes.DATE
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
-
-    updatedAt: {
-      allowNull: false,
-      type: DataTypes.DATE
-    }
   }, {
       sequelize,
       modelName: 'Teams',
       tableName: 'Teams',
       freezeTableName: true,
-      timestamp: true,
+      timestamps: true,
   })
 
   return Teams

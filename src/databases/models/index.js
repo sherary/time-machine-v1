@@ -32,6 +32,7 @@ db.sequelize = sequelize
 db.users = require('./users')(sequelize, DataTypes);
 db.friends = require('./friendlists')(sequelize, DataTypes);
 db.teams = require('./teams')(sequelize, DataTypes);
+db.team_members = require('./members')(sequelize, DataTypes);
 db.capsules = require('./capsules')(sequelize, DataTypes);
 db.device_management = require('./device_management')(sequelize, DataTypes);
 
@@ -58,14 +59,14 @@ db.friends.belongsTo(db.users, {
 })
 
 db.users.hasMany(db.teams, {
-    foreignKey: 'userID',
+    foreignKey: 'creatorID',
     as: 'teams',
     onDelete: 'cascade'
 })
 
 db.teams.belongsTo(db.users, {
-    foreignKey: 'userID',
-    as: 'users'
+    foreignKey: 'creatorID',
+    as: 'teams'
 })
 
 db.users.hasMany(db.capsules, {
@@ -81,7 +82,7 @@ db.capsules.belongsTo(db.users, {
 
 db.teams.hasMany(db.capsules, {
     foreignKey: 'teamID',
-    as: 'capsules',
+    as: 'capsule',
     onDelete: 'cascade'
 })
 
@@ -90,9 +91,31 @@ db.capsules.belongsTo(db.teams, {
     as: 'teams'
 })
 
+db.teams.hasMany(db.team_members, {
+    foreignKey: 'teamID',
+    as: 'members',
+    onDelete: 'cascade'
+})
+
+db.team_members.belongsTo(db.teams, {
+    foreignKey: 'teamID',
+    as: 'teams_members'
+})
+
+db.users.hasMany(db.team_members, {
+    foreignKey: 'userID',
+    as: 'teamMembers',
+    onDelete: 'cascade'
+})
+
+db.team_members.belongsTo(db.users, {
+    foreignKey: 'userID',
+    as: 'team_members'
+})
+
 db.users.hasMany(db.device_management, {
     foreignKey: 'userID',
-    as: 'users',
+    as: 'users_devices',
     onDelete: 'cascade'
 })
 
