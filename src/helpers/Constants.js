@@ -57,6 +57,10 @@ const PAYLOAD = {
         MAX: 50,
     },
 
+    TEXT: {
+        MAX: 250,
+    },
+
     USERNAME: {
         MAX: 20,
     },

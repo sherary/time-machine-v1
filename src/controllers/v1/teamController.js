@@ -7,9 +7,9 @@ const Teams = class {
         let result = {};
         const t = await sequelize.transaction();
         try {
-            const { creatorID, name, description } = req.body;
+            const { name, description } = req.data;
             const userData = { 
-                creatorID: +creatorID, 
+                creatorID: +req.user.id, 
                 name: name, 
                 description: description 
             } 
@@ -64,7 +64,7 @@ const Teams = class {
     GetOneTeam = async (req, res, next) => {
         let result = {};
         try {
-            const { teamID } = req.params;
+            const { teamID } = req.data;
             const data = await teams.findAll({
                 where: {
                     id: +teamID
@@ -259,14 +259,48 @@ const Teams = class {
     }
 
     // creator only
+    EditTeam = async (req, res, next) => {
+        let result = {}
+        const t = await sequelize.transaction();
+
+        try {
+            const { name, description } = req.data;
+            const data = await teams.update({
+                name: name,
+                description: description
+            }, {
+                where: {
+                    id: +req.params.teamID,
+                    creatorID: +req.user.id
+                },
+                transaction: t,
+            })
+            
+            if (data > 0) {
+                await t.commit();
+                result = responseHandler(httpCodes.ACCEPTED.CODE, "Success updating team info!",  data);
+            } else {
+                await t.rollback();
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "No changes made", data);
+            }
+        } catch (err) {
+            await t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to update team info", err.message);
+        }
+
+        req.response = result;
+        return next();
+    }
+
+    // creator only
     DisbandTeam = async (req, res, next) => {
         const t = await sequelize.transaction();
         let result = {};
         try {
             const data = await teams.destroy({
                 where: {
-                    id: +req.body.teamID,
-                    creatorID: +req.body.userID
+                    id: +req.data.teamID,
+                    creatorID: +req.user.id
                 },
                 transaction: t,
             });
