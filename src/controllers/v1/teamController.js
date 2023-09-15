@@ -95,6 +95,30 @@ const Teams = class {
         return next();
     }
 
+    ViewAllTeamMembers = async (req, res, next) => {
+        let result = {}
+        try {
+            const data = await team_members.findOne({
+                where: {
+                    teamID: +req.body.teamID,
+                    status: 'Accepted'
+                },
+                raw: true
+            });
+
+            if (data) {
+                result = responseHandler(httpCodes.SUCCESS.CODE, "View all team member success!", data);
+            } else {
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "No team members found", data);
+            }
+        } catch (error) {console.log(error)
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to view all team members", error.message);
+        }
+
+        req.response = result;
+        return next();
+    }
+
     // creator only
     InviteTeamMember = async (req, res, next) => {
         const t = await sequelize.transaction();
@@ -166,54 +190,7 @@ const Teams = class {
         req.response = result
         return next();
     }
-
-    //creator only
-    MemberAcceptRequest = async (req, res, next) => {
-        
-    }
-
-    JoinRequest = async (req, res, next) => {
-        let result = {};
-        const t = await sequelize.transaction();
-        try {
-            const { teamID, userID } = req.query;
-            const data = await team_members.create({
-                teamID: +teamID,
-                userID: +userID
-            }, {
-                transaction: t
-            })
-            
-            await t.commit();
-            result = responseHandler(httpCodes.CREATED.CODE, "Success sending request", data);
-        } catch (err) {
-            await t.rollback();
-            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to create new request", err);
-        }
-
-        req.response = result;
-        return next();
-    }
-
-    // creator only
-    AcceptTeamMember = async (req, res, next) => {
-        let result = {};
-        const t = await sequelize.transaction();
-        try {console.log(req.query)
-            // const requestData = await teams.findOne({
-            //     where: {
-            //         id: +req.query.teamID
-            //     },
-            //     attributes: ['name', 'description', 'members_lists'],
-            //     transaction: t,
-            //     raw: true,
-            // })
-            // console.log(requestData);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
+    
     // creator only
     RemoveTeamMember = async (req, res, next) => {
         const t = await sequelize.transaction();
@@ -221,75 +198,93 @@ const Teams = class {
         
         try {
             const { teamID, userID } = req.query;
-            const data = await teams.findOne({
+            
+            const data = await team_members.destroy({
                 where: {
-                    id: +teamID
+                    userID: +userID,
+                    teamID: +teamID,
+                    status: 'Accepted'
                 },
                 transaction: t,
-                raw: true
             })
             
-            const user = await users.findOne({
-                where: {
-                    id: +userID
-                },
-                transaction: t,
-                attributes: ['id', 'name'],
-                raw: true
-            });
-            console.log(data, user);
-            // if (!user) {
-            //     result = responseHandler(httpCodes.NOTFOUND.CODE, "No user found", user);
-            // } else {
-            //     if (data) {
-            //         const members = JSON.parse(data['members_lists']);
-            //         const members_lists = members.map(member => member.id);
-            //         console.log(members_lists)
-            //         // if (!members_lists.includes(+userID)) {
-            //         //     result = responseHandler(httpCodes.CONFLICT.CODE, "Member has already left");
-            //         // } else {
-            //         //     members.push({ ...user, status: "Pending" });
-            //         //     const newMember = JSON.stringify(members);
-                        
-            //         //     await teams.update({
-            //         //         members_lists: newMember
-            //         //     }, {
-            //         //         where: {
-            //         //             id: +req.query.teamID
-            //         //         },
-            //         //         transaction: t
-            //         //     });
-    
-            //         //     await t.commit();
-            //         //     result = responseHandler(httpCodes.ACCEPTED.CODE, "Success updating members", members);
-            //         // }
-            //     }
-            // }
+            if (data) {
+                await t.commit();
+                result = responseHandler(httpCodes.ACCEPTED.CODE, "Success removing team member", data);
+            } else {
+                await t.rollback();
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "No member found", data);
+            }
         } catch (err) {
-            // await t.rollback();
-            // result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to add team members", err);
+            await t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to remove team members", err.message);
         }
 
-        // req.response = result;
-        // return next();
+        req.response = result;
+        return next();
     }
 
     //creator only
     BlockTeamMember = async (req, res, next) => {
+        let result = {}
+        const t = await sequelize.transaction();
+
         try {
+            const { userID, teamID } = req.query;
+            const data = await team_members.update({
+                status: 'Blocked'
+            }, {
+                where: {
+                    userID: +userID,
+                    teamID: +teamID,
+                    status: 'Accepted'
+                },
+                transaction: t
+            })    
             
+            if (data > 0) {
+                await t.commit();
+                result = responseHandler(httpCodes.ACCEPTED.CODE, "Success blocking member", data);
+            } else {
+                await t.rollback();
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "Member not found", data);
+            }
         } catch (err) {
-            
+            await t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to block member", err.message);
         }
+
+        req.response = result;
+        return next();
     }
 
     // creator only
     DisbandTeam = async (req, res, next) => {
+        const t = await sequelize.transaction();
+        let result = {};
         try {
-            
+            const data = await teams.destroy({
+                where: {
+                    id: +req.body.teamID,
+                    creatorID: +req.body.userID
+                },
+                transaction: t,
+            });
+
+            if (data > 0) {
+                await t.commit();
+                result = responseHandler(httpCodes.ACCEPTED.CODE, "Disband team success!", data);
+            } else {
+                await t.rollback();
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "Team not found!", data);
+            }
         } catch (err) {
-            
+            await t.rollback();
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to disband team", err.message);
         }
+
+        req.response = result;
+        return next();
     }
 }
 

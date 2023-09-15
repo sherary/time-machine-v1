@@ -4,14 +4,15 @@ const TeamController = require('../../controllers/v1/teamController');
 const MemberRouter = require('./memberRouter');
 const Auth = require('../../middlewares/authenticate');
 
+// team creator route
 router.use('/members', MemberRouter);
 router.post('/new', TeamController.CreateTeam);
-router.patch('/remove', TeamController.RemoveTeamMember);
+router.delete('/delete', TeamController.DisbandTeam);
 
-router.post('/join', TeamController.JoinRequest);
-
-router.get('/', TeamController.GetAllTeams);
+// user route
 router.get('/:teamID', TeamController.GetOneTeam);
-router.delete('/delete/:teamID', TeamController.DisbandTeam);
+
+// dev only route
+router.get('/', TeamController.GetAllTeams);
 
 module.exports = router;
