@@ -111,7 +111,7 @@ const Teams = class {
             } else {
                 result = responseHandler(httpCodes.NOTFOUND.CODE, "No team members found", data);
             }
-        } catch (error) {console.log(error)
+        } catch (error) {
             result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to view all team members", error.message);
         }
 
@@ -195,7 +195,7 @@ const Teams = class {
     RemoveTeamMember = async (req, _, next) => {
         const t = await sequelize.transaction();
         let result = {};
-        console.log("Request query", req.query);
+        
         try {
             const { teamID, userID } = req.data;
             
@@ -257,7 +257,7 @@ const Teams = class {
         return next();
     }
 
-    ViewAllBlockedMembers = async (req, res, next) => {
+    ViewAllBlockedMembers = async (req, _, next) => {
         let result = {}
         try {
             const data = await team_members.findAll({

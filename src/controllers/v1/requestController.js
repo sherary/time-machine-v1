@@ -1,4 +1,4 @@
-const { sequelize, users, teams, friends, team_members } = require("../../databases/models");
+const { sequelize, teams, friends, team_members } = require("../../databases/models");
 const { responseHandler } = require("../../helpers/Commons");
 const { httpCodes } = require("../../helpers/Constants");
 
