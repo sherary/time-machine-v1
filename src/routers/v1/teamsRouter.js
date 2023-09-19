@@ -6,7 +6,7 @@ const Auth = require('../../middlewares/authenticate');
 const Validate = require('../../middlewares/validators/teams.validator');
 
 // team creator route
-router.use('/members', MemberRouter);
+router.use('/members', Auth.isAuthenticated, MemberRouter);
 router.post('/new', Auth.isAuthenticated, Validate.CreateTeamPayload, TeamController.CreateTeam);
 router.patch('/edit/:teamID', Auth.isAuthenticated, Validate.UpdatePayload, TeamController.EditTeam);
 router.delete('/delete/:teamID', Auth.isAuthenticated, Validate.IDPayload, TeamController.DisbandTeam);

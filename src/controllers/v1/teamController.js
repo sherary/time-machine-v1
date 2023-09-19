@@ -3,7 +3,7 @@ const { responseHandler } = require("../../helpers/Commons");
 const { httpCodes } = require("../../helpers/Constants");
 
 const Teams = class {
-    CreateTeam = async (req, res, next) => {
+    CreateTeam = async (req, _, next) => {
         let result = {};
         const t = await sequelize.transaction();
         try {
@@ -38,7 +38,7 @@ const Teams = class {
     }
 
     //dev only
-    GetAllTeams = async (req, res, next) => {
+    GetAllTeams = async (req, _, next) => {
         let result = {};
         try {
             const data = await teams.findAll({
@@ -61,7 +61,7 @@ const Teams = class {
         return next();
     }
 
-    GetOneTeam = async (req, res, next) => {
+    GetOneTeam = async (req, _, next) => {
         let result = {};
         try {
             const { teamID } = req.data;
@@ -95,12 +95,12 @@ const Teams = class {
         return next();
     }
 
-    ViewAllTeamMembers = async (req, res, next) => {
-        let result = {}
+    ViewAllTeamMembers = async (req, _, next) => {
+        let result = {};
         try {
-            const data = await team_members.findOne({
+            const data = await team_members.findAll({
                 where: {
-                    teamID: +req.body.teamID,
+                    teamID: req.data.teamID,
                     status: 'Accepted'
                 },
                 raw: true
@@ -120,12 +120,12 @@ const Teams = class {
     }
 
     // creator only
-    InviteTeamMember = async (req, res, next) => {
+    InviteTeamMember = async (req, _, next) => {
         const t = await sequelize.transaction();
         let result = {};
         
         try {
-            const { teamID, userID } = req.query;
+            const { teamID, userID } = req.data;
             const data = await teams.findOne({
                 where: {
                     id: +teamID
@@ -167,7 +167,7 @@ const Teams = class {
         return next();
     }
 
-    ViewAllRequests = async (req, res, next) => {
+    ViewAllRequests = async (req, _, next) => {
         let result = {};
         try {
             const { teamID } = req.query;
@@ -192,18 +192,17 @@ const Teams = class {
     }
     
     // creator only
-    RemoveTeamMember = async (req, res, next) => {
+    RemoveTeamMember = async (req, _, next) => {
         const t = await sequelize.transaction();
         let result = {};
-        
+        console.log("Request query", req.query);
         try {
-            const { teamID, userID } = req.query;
+            const { teamID, userID } = req.data;
             
             const data = await team_members.destroy({
                 where: {
                     userID: +userID,
                     teamID: +teamID,
-                    status: 'Accepted'
                 },
                 transaction: t,
             })
@@ -225,7 +224,7 @@ const Teams = class {
     }
 
     //creator only
-    BlockTeamMember = async (req, res, next) => {
+    BlockTeamMember = async (req, _, next) => {
         let result = {}
         const t = await sequelize.transaction();
 
@@ -258,8 +257,44 @@ const Teams = class {
         return next();
     }
 
+    ViewAllBlockedMembers = async (req, res, next) => {
+        let result = {}
+        try {
+            const data = await team_members.findAll({
+                where: {
+                    teamID: +req.data.teamID,
+                    status: 'Blocked'
+                },
+                include: {
+                    model: users,
+                    as: 'team_members',
+                    attributes: ['name']
+                },
+                raw: true
+            });
+
+            let newObj = {}
+            data.map(items => {
+                newObj['name'] = items['team_members.name'];
+                delete items['team_members.name'];
+                items['name'] = newObj['name'];
+            })
+            
+            if (data) {
+                result = responseHandler(httpCodes.SUCCESS.CODE, "Success getting all blcoked members", data);
+            } else {
+                result = responseHandler(httpCodes.NOTFOUND.CODE, "No blocked members found", data);
+            }
+        } catch (err) {
+            result = responseHandler(httpCodes.INTERNAL_ERROR.CODE, "Failed to get all blocked members", err.message);
+        }
+
+        req.response = result;
+        return next();
+    }
+
     // creator only
-    EditTeam = async (req, res, next) => {
+    EditTeam = async (req, _, next) => {
         let result = {}
         const t = await sequelize.transaction();
 
@@ -293,7 +328,7 @@ const Teams = class {
     }
 
     // creator only
-    DisbandTeam = async (req, res, next) => {
+    DisbandTeam = async (req, _, next) => {
         const t = await sequelize.transaction();
         let result = {};
         try {
